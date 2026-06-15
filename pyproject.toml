@@ -43,4 +43,6 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ipykernel>=6.29.5",
+    "pytest>=9.1.0",
+    "pytest-asyncio>=1.4.0",
 ]
