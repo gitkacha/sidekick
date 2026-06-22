@@ -116,7 +116,7 @@ class TestRoutersAndHelpers:
         assert start_router(state) == "finish"
 
 
-class testAskQuestionNode:
+class TestAskQuestionNode:
     """Tests for the clarifier ask_question node."""
 
     def test_ask_question_selects_new_question(self) -> None:

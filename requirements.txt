@@ -146,7 +146,9 @@ gradio==5.33.1
 gradio-client==1.10.3
     # via gradio
 greenlet==3.2.3
-    # via playwright
+    # via
+    #   playwright
+    #   sqlalchemy
 griffe==1.7.3
     # via openai-agents
 groovy==0.1.2

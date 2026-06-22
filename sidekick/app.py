@@ -21,7 +21,6 @@ from langchain_core.messages import SystemMessage
 from sidekick import (
     build_clarifier_graph,
     build_sidekick_graph,
-    make_thread_id,
     QSTNS,
     setup,
 )
@@ -31,8 +30,8 @@ from sidekick import (
 # ---------------------------------------------------------------------------
 setup()
 
-sidekick_graph = build_sidekick_graph()
-clarifier_graph = build_clarifier_graph()
+# sidekick_graph = build_sidekick_graph()
+# clarifier_graph = build_clarifier_graph()
 
 
 # ---------------------------------------------------------------------------
@@ -188,4 +187,4 @@ with gr.Blocks(title="Sidekick", theme=gr.themes.Ocean()) as combined_ui:
     )
 
 if __name__ == "__main__":
-    combined_ui.launch(inbrowser=True)
+    combined_ui.launch(server_name="0.0.0.0", server_port=7860, inbrowser=False)

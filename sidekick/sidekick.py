@@ -12,7 +12,6 @@ This module contains:
 
 from __future__ import annotations
 
-import os
 import uuid
 from typing import Annotated, Any, Dict, List, Optional, TypedDict
 
