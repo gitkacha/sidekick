@@ -30,8 +30,8 @@ from sidekick import (
 # ---------------------------------------------------------------------------
 setup()
 
-# sidekick_graph = build_sidekick_graph()
-# clarifier_graph = build_clarifier_graph()
+sidekick_graph = build_sidekick_graph()
+clarifier_graph = build_clarifier_graph()
 
 
 # ---------------------------------------------------------------------------
@@ -75,8 +75,6 @@ async def process_combined(
             # Record the user's answer to the previously asked question
             grState["answers"].append(message)
 
-        count_before = grState["count"]
-
         result = await clarifier_graph.ainvoke(
             {"messages": [user_msg], "asked": grState["last_q"]},
             config=cfg,
@@ -88,14 +86,13 @@ async def process_combined(
         # Sync checkpointed state
         asked_so_far = result.get("asked", grState["last_q"])
         grState["last_q"] = asked_so_far
-        grState["count"] = len(grState["last_q"])
 
         # Prefix while we are still asking questions
-        if count_before < len(QSTNS):
-            reply["content"] = f"Clarifying Question {grState['count']}:\n{reply['content']}"
+        if len(grState["last_q"]) < len(QSTNS):
+            reply["content"] = f"Clarifying Question {len(grState['last_q']) + 1}:\n{reply['content']}"
 
-        # Transition once all 3 questions are on record
-        if grState["count"] >= len(QSTNS):
+        # Transition once all questions are on record
+        if len(grState["last_q"]) >= len(QSTNS):
             grState["phase"] = "work"
             grState["clarifications"] = [
                 f"Q: {q}\nA: {a}"
@@ -187,4 +184,4 @@ with gr.Blocks(title="Sidekick", theme=gr.themes.Ocean()) as combined_ui:
     )
 
 if __name__ == "__main__":
-    combined_ui.launch(server_name="0.0.0.0", server_port=7860, inbrowser=False)
+    combined_ui.launch(server_name="0.0.0.0", server_port=7861, inbrowser=False)

@@ -121,15 +121,29 @@ def setup(model: str = "gpt-4o-mini") -> None:
     tools = pw_tools + other
 
     # ------------------------------------------------------------------
-    # Initialise LLMs
+    # Initialise LLMs – both with error handling
     # ------------------------------------------------------------------
-    worker_llm = ChatOpenAI(model=model)
-    worker_llm_with_tools = worker_llm.bind_tools(tools)
+    global _setup_error
+    # Worker LLM
+    try:
+        worker_llm = ChatOpenAI(model=model)
+        worker_llm_with_tools = worker_llm.bind_tools(tools)
+    except Exception as e:
+        worker_llm_with_tools = None
+        _setup_error = str(e)
 
-    evaluator_llm = ChatOpenAI(model=model)
-    evaluator_llm_with_output = evaluator_llm.with_structured_output(
-        EvaluatorOutput
-    )
+    # Evaluator LLM
+    try:
+        evaluator_llm = ChatOpenAI(model=model)
+        evaluator_llm_with_output = evaluator_llm.with_structured_output(
+            EvaluatorOutput
+        )
+    except Exception as e:
+        evaluator_llm_with_output = None
+        if _setup_error:
+            _setup_error += f"\nEvaluator init failed: {e}"
+        else:
+            _setup_error = f"Evaluator init failed: {e}"
 
     # ------------------------------------------------------------------
     # Build main Sidekick graph
@@ -175,7 +189,10 @@ With this feedback, please continue the assignment, ensuring that you meet the s
     if not found_system_message:
         messages = [SystemMessage(content=system_message)] + messages
 
-    assert worker_llm_with_tools is not None
+    if worker_llm_with_tools is None:
+        # Return a clear error message indicating LLM setup failure
+        error_msg = globals().get('_setup_error', 'LLM not configured')
+        return {"messages": [{"role": "assistant", "content": f"Setup error: {error_msg}"}]}
     response = worker_llm_with_tools.invoke(messages)
     return {"messages": [response]}
 
@@ -230,7 +247,16 @@ Also, decide if more user input is required, either because the assistant has a 
         HumanMessage(content=user_message),
     ]
 
-    assert evaluator_llm_with_output is not None
+    if evaluator_llm_with_output is None:
+        # Return a clear error message indicating LLM setup failure
+        error_msg = globals().get('_setup_error', 'Evaluator LLM not configured')
+        return {
+            "messages": [{"role": "assistant", "content": f"Setup error: {error_msg}"}],
+            "feedback_on_work": error_msg,
+            "success_criteria_met": False,
+            "user_input_needed": True,
+            "iteration_count": state.get("iteration_count", 0) + 1,
+        }
     eval_result = evaluator_llm_with_output.invoke(evaluator_messages)
     return {
         "messages": [
@@ -313,21 +339,27 @@ def build_sidekick_graph():
 
 
 def build_clarifier_graph():
-    """Compile the turn-based clarifier graph (START → ask_question|finish → END)."""
+    """Compile the turn-based clarifier graph (START → ask_question|finish → END).
+
+    Each invocation asks exactly ONE question (or finishes if all 3 asked).
+    The Gradio app drives the turn-by-turn flow and manages state via grState.
+    """
     graph_builder = StateGraph(TestState)
     graph_builder.add_node("ask_question", ask_question)
     graph_builder.add_node("finish", finish)
 
+    # Route from START based on how many questions have been asked
     graph_builder.add_conditional_edges(
         START,
         start_router,
         {"ask_question": "ask_question", "finish": "finish"},
     )
+    # Both nodes go directly to END — no cycles, so one question per ainvoke
     graph_builder.add_edge("ask_question", END)
     graph_builder.add_edge("finish", END)
 
-    memory = MemorySaver()
-    return graph_builder.compile(checkpointer=memory)
+    # No checkpointer: app manages clarification state via grState
+    return graph_builder.compile()
 
 
 # ---------------------------------------------------------------------------

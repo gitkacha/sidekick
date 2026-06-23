@@ -6,7 +6,7 @@ import requests
 from playwright.async_api import async_playwright
 from dotenv import load_dotenv
 
-from langchain.agents import Tool
+from langchain_core.tools import Tool
 from langchain_community.agent_toolkits import FileManagementToolkit, PlayWrightBrowserToolkit
 from langchain_community.tools.wikipedia.tool import WikipediaQueryRun
 from langchain_community.utilities import GoogleSerperAPIWrapper
@@ -19,7 +19,11 @@ load_dotenv(override=True)
 pushover_token = os.getenv("PUSHOVER_TOKEN")
 pushover_user = os.getenv("PUSHOVER_USER")
 pushover_url = "https://api.pushover.net/1/messages.json"
-serper = GoogleSerperAPIWrapper()
+serper = None
+try:
+    serper = GoogleSerperAPIWrapper()
+except Exception as e:
+    print(f"Warning: Failed to initialize GoogleSerperAPIWrapper: {e}")
 
 async def playwright_tools():
     playwright = await async_playwright().start()
@@ -30,7 +34,10 @@ async def playwright_tools():
 
 def push(text: str):
     """Send a push notification to the user"""
-    requests.post(pushover_url, data = {"token": pushover_token, "user": pushover_user, "message": text})
+    try:
+        requests.post(pushover_url, data={"token": pushover_token, "user": pushover_user, "message": text}, timeout=10)
+    except Exception as e:
+        print(f"Warning: Failed to send push notification: {e}")
     return "success"
 
 
