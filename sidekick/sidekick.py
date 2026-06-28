@@ -116,8 +116,16 @@ def setup(model: str = "gpt-4o-mini") -> None:
 
     # Playwright tools are async – create a one-off event loop to grab them
     loop = asyncio.get_event_loop()
-    pw_tools, _, _ = loop.run_until_complete(_playwright_tools())  # type: ignore[misc]
-    other = loop.run_until_complete(_other_tools())  # type: ignore[misc]
+    try:
+        pw_tools, _, _ = loop.run_until_complete(_playwright_tools())  # type: ignore[misc]
+    except Exception as e:
+        print(f"Warning: Playwright tools failed to load: {e}")
+        pw_tools = []
+    try:
+        other = loop.run_until_complete(_other_tools())  # type: ignore[misc]
+    except Exception as e:
+        print(f"Warning: Other tools failed to load: {e}")
+        other = []
     tools = pw_tools + other
 
     # ------------------------------------------------------------------

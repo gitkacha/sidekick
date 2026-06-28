@@ -184,4 +184,9 @@ with gr.Blocks(title="Sidekick", theme=gr.themes.Ocean()) as combined_ui:
     )
 
 if __name__ == "__main__":
-    combined_ui.launch(server_name="0.0.0.0", server_port=7861, inbrowser=False)
+    import os
+    combined_ui.launch(
+        server_name=os.getenv("GRADIO_SERVER_NAME", "0.0.0.0"),
+        server_port=int(os.getenv("GRADIO_SERVER_PORT", "7860")),
+        inbrowser=False,
+    )

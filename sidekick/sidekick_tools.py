@@ -26,10 +26,15 @@ except Exception as e:
     print(f"Warning: Failed to initialize GoogleSerperAPIWrapper: {e}")
 
 async def playwright_tools():
-    playwright = await async_playwright().start()
-    browser = await playwright.chromium.launch(headless=True)
-    toolkit = PlayWrightBrowserToolkit.from_browser(async_browser=browser)
-    return toolkit.get_tools(), browser, playwright
+    try:
+        playwright = await async_playwright().start()
+        browser = await playwright.chromium.launch(headless=True)
+        toolkit = PlayWrightBrowserToolkit.from_browser(async_browser=browser)
+        return toolkit.get_tools(), browser, playwright
+    except Exception as e:
+        print(f"Warning: Failed to initialize Playwright browser: {e}")
+        print("Continuing without browser automation capabilities...")
+        return [], None, playwright if 'playwright' in dir() else None
 
 
 def push(text: str):

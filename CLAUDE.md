@@ -93,7 +93,8 @@ docker run --rm -it \
   -p 7860:7860 \
   -v $(pwd)/.env:/app/.env:ro \
   -v $(pwd)/sandbox:/app/sandbox \
-  sidekick:latest uv run python sidekick/app.py
+  -v $(pwd)/data:/app/data \
+  sidekick:latest
 
 # Sandbox notes
 - The container runs in a read-only root filesystem except for mounted volumes.
@@ -124,12 +125,14 @@ To ensure the setup works end-to-end, follow these steps:
    docker run --rm -it -p 7860:7860 \
      -v $(pwd)/.env:/app/.env:ro \
      -v $(pwd)/sandbox:/app/sandbox \
-     sidekick:latest uv run python sidekick/app.py
+     -v $(pwd)/data:/app/data \
+     sidekick:latest
    ```
 
 4. **End‑to‑End Smoke Test**
    - Open `http://localhost:7860` in a browser.
    - Interact with the Gradio UI: ask a question, answer the three clarifying prompts, and observe the final response.
+   - Verify no error in UI or Docker logs
    - Verify that any data written to `sandbox/` persists across container restarts.
 
 If any step fails, review the error output, adjust the relevant configuration (e.g., missing env variables, incorrect file paths), and repeat until the flow works.
